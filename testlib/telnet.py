@@ -3,6 +3,7 @@ __author__ = 'Tacolin'
 
 from target import *
 import telnetlib
+import time
 
 
 class TelnetTarget(Target):
@@ -30,11 +31,18 @@ class TelnetTarget(Target):
             return self.telnet.read_until(string.encode('ascii'), timeout).decode('ascii')
 
     def expect(self, string_tuple, timeout=None):
-        converted_list = []
-        for s in string_tuple:
-            converted_list.append(s.encode('ascii'))
-        if timeout is None:
-            expect_result = self.telnet.expect(converted_list, self.wait_timeout)
-        else:
-            expect_result = self.telnet.expect(converted_list, timeout)
-        return expect_result[0] != -1, expect_result[0], expect_result[2].decode('ascii')
+        timeout = self.wait_timeout if timeout is None else timeout
+        received_list = []
+        while timeout > 0.0:
+            data = self.telnet.read_eager()
+            if len(data) > 0:
+                received_list.append(data.decode('ascii'))
+                received_string = ''.join([elem for elem in received_list])
+                for i in range(len(string_tuple)):
+                    index = received_string.find(string_tuple[i])
+                    if index != -1:
+                        index += len(string_tuple[i])
+                        return True, i, received_string[:index]
+            time.sleep(0.005)
+            timeout -= 0.005
+        return False, -1, ''.join([elem for elem in received_list])

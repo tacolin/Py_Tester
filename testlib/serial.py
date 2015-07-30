@@ -3,6 +3,7 @@ __author__ = 'Tacolin'
 
 from target import *
 import serial
+import time
 
 
 class SerialTarget(Target):
@@ -64,7 +65,7 @@ class SerialTarget(Target):
                     if index != -1:
                         index += len(string_tuple[i])
                         return True, i, received_string[:index]
-            sleep(0.005)
+            time.sleep(0.005)
             timeout -= 0.005
         return False, -1, ''.join([elem for elem in received_list])
 

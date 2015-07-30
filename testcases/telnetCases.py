@@ -27,22 +27,22 @@ class Case1(unittest.TestCase):
 
     def test_update(self):
         self.tel.send('sudo apt-get update')
-        chk, idx, data = self.tel.wait_more(['[sudo] password for mme:', '$'], 120)
-        self.assertEqual(chk, True)
-        self.assertTrue(idx in [1, 2], data)
+        chk, idx, data = self.tel.wait_more(['password for mme:', '$'], 60)
+        self.assertEqual(chk, True, data)
+        self.assertTrue(idx in [0, 1], data)
 
-        if idx == 1:
+        if idx == 0:
             self.tel.send(self.password)
-            chk, data = self.tel.wait('$', 120)
+            chk, data = self.tel.wait('$', 60)
             self.assertEqual(chk, True, data)
 
     def test_upgrade(self):
         self.tel.send('sudo apt-get upgrade -y')
-        chk, idx, data = self.tel.wait_more(['password for mme:', '$'], 180)
+        chk, idx, data = self.tel.wait_more(['password for mme:', '$'], 60)
         self.assertEqual(chk, True, data)
-        self.assertTrue(idx in [1, 2], data)
+        self.assertTrue(idx in [0, 1], data)
 
-        if idx == 1:
+        if idx == 0:
             self.tel.send(self.password)
-            chk, data = self.tel.wait('$', 180)
+            chk, data = self.tel.wait('$', 60)
             self.assertEqual(chk, True, data)
