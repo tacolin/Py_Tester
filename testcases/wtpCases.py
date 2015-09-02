@@ -15,13 +15,12 @@ class Wtp(unittest.TestCase):
         self.wtp.disconnect()
 
     def wtp_enter_linux(self):
-        self.wtp.send('cd ~')
-        chk, idx, data = self.wtp.wait_more(['ANI Enable:  1', '~#'], 120)
+        i, chk, data = 0, False, ''
+        while i <= 6 and chk is not True:
+            self.wtp.send('cd ~')
+            chk, data = self.wtp.wait('root@OpenWrt:')
+            i += 1
         self.assertTrue(chk, data)
-
-        if idx == 0:
-            chk, data = self.wtp.wait('run wtp...', 120)
-            self.assertTrue(chk, data)
 
         self.wtp.send('cd ~')
         chk, data = self.wtp.wait('#')
@@ -35,6 +34,23 @@ class Wtp(unittest.TestCase):
         chk, data = self.wtp.wait('#')
         self.assertTrue(chk, data)
 
+    def scp_download(self, ip, username, password, remote_file, local_file):
+        command = 'scp {0}@{1}:{2} {3}'.format(username, ip, remote_file, local_file)
+        self.wtp.send(command)
+
+        token = "{0}@{1}'s password:".format(username, ip)
+        chk, idx, data = self.wtp.wait_more(['Do you want to continue connecting? (y/n)', token])
+        self.assertTrue(chk, data)
+
+        if idx == 0:
+            self.wtp.send('y')
+            chk, data = self.wtp.wait(token)
+            self.assertTrue(chk, data)
+
+        self.wtp.send(password)
+        chk, data = self.wtp.wait('#', 60)
+        self.assertTrue(chk)
+
     def wtp_get_tarball(self):
         self.wtp.send('cd /tmp/')
         chk, data = self.wtp.wait('#')
@@ -44,13 +60,11 @@ class Wtp(unittest.TestCase):
         chk, data = self.wtp.wait('#')
         self.assertTrue(chk, data)
 
-        self.wtp.send('tftp -g -r wtp_taco.tar.gz 192.168.2.200')
+        self.wtp.send('rm -rf /tmp/wtp/')
         chk, data = self.wtp.wait('#')
         self.assertTrue(chk, data)
 
-        self.wtp.send('ls')
-        chk, data = self.wtp.wait('wtp_taco.tar.gz')
-        self.assertTrue(chk, data)
+        self.scp_download('192.168.2.200', 'pi', 'raspberry', '/tftpboot/wtp_taco.tar.gz', '/tmp/wtp_taco.tar.gz')
 
         self.wtp.send('tar -xzf wtp_taco.tar.gz -C ./')
         chk, data = self.wtp.wait('#')
@@ -61,11 +75,12 @@ class Wtp(unittest.TestCase):
         chk, data = self.wtp.wait('#')
         self.assertTrue(chk, data)
 
-        self.wtp.send('cd /tmp/wtp/')
-        chk, data = self.wtp.wait('#')
-        self.assertTrue(chk, data)
+        # self.wtp.send('cd /tmp/wtp/')
+        # chk, data = self.wtp.wait('#')
+        # self.assertTrue(chk, data)
 
-        self.wtp.send('./wtp &')
+        # self.wtp.send('./wtp -conf /tmp/wtp/config/config.wtp &')
+        self.wtp.send('wtp -conf /tmp/config.wtp &')
         time.sleep(2)
         self.wtp.send('')
         chk, data = self.wtp.wait('#')
